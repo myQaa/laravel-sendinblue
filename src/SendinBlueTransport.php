@@ -28,7 +28,7 @@ class SendinBlueTransport extends Transport
      *
      * @var string
      */
-    const EXTRA_FIELDS_ENTITY_NAME = 'sendinblue/x-extra-fields';
+    public const EXTRA_FIELDS_ENTITY_NAME = 'sendinblue/x-extra-fields';
 
     /**
      * The subject placeholder telling we want to use the subject defined in the template.
@@ -38,7 +38,7 @@ class SendinBlueTransport extends Transport
      *
      * @var string
      */
-    const USE_TEMPLATE_SUBJECT = '___TEMPLATE_SUBJECT___';
+    public const USE_TEMPLATE_SUBJECT = '___TEMPLATE_SUBJECT___';
 
     /**
      * The SendinBlue instance.
@@ -155,6 +155,28 @@ class SendinBlueTransport extends Transport
             $text = strip_tags($message->getBody());
         }
 
+        $attachment = [];
+
+        // CID embedded images (inline images)
+        preg_match_all('/<img.+?src="(.+?)"/', $html, $matches);
+        array_shift($matches);
+        $matches = Arr::flatten($matches);
+
+        foreach ($matches as $match) {
+            $data = @file_get_contents($match);
+
+            if ($data) {
+                $fileName = basename($match);
+                $html = str_replace($match, 'cid:'.$fileName, $html);
+                $text = str_replace($match, 'cid:'.$fileName, $text);
+
+                $attachment[] = [
+                    'name' => $fileName,
+                    'content' => base64_encode($data),
+                ];
+            }
+        }
+
         if ($html !== null) {
             $smtpEmail->setHtmlContent($html);
         }
@@ -181,7 +203,6 @@ class SendinBlueTransport extends Transport
             $smtpEmail->setReplyTo(end($replyTo));
         }
 
-        $attachment = [];
         foreach ($message->getChildren() as $child) {
             if ($child instanceof Swift_Attachment) {
                 $attachment[] = new SendSmtpEmailAttachment([
@@ -252,7 +273,9 @@ class SendinBlueTransport extends Transport
         foreach ($message->getChildren() as $attachment) {
             if (
                 $attachment instanceof Swift_Image
-                && in_array(self::EXTRA_FIELDS_ENTITY_NAME, [$attachment->getFilename()]
+                && in_array(
+                    self::EXTRA_FIELDS_ENTITY_NAME,
+                    [$attachment->getFilename()]
                 )
             ) {
                 return self::sgDecode($attachment->getBody());

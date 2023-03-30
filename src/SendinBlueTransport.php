@@ -168,6 +168,14 @@ class SendinBlueTransport extends Transport
 
             if ($data) {
                 $fileName = basename($match);
+
+                // If the file name extension is missing, add it
+                if (!$this->hasExtension($fileName)) {
+                    $info = getimagesizefromstring($data);
+                    $extension = $info ? $this->getExtensionFromMimeType($info['mime']) : '';
+                    $fileName = Str::finish($fileName, '.'.$extension);
+                }
+
                 $html = str_replace($match, 'cid:'.$fileName, $html);
                 $text = str_replace($match, 'cid:'.$fileName, $text);
 
@@ -284,5 +292,23 @@ class SendinBlueTransport extends Transport
         }
 
         return [];
+    }
+
+    private function getExtensionFromMimeType($mime)
+    {
+        $extensions = array(
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'application/pdf' => 'pdf',
+        );
+
+        return isset($extensions[$mime]) ? $extensions[$mime] : false;
+    }
+
+    private function hasExtension($filename)
+    {
+        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        return !empty($extension);
     }
 }

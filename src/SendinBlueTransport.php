@@ -4,6 +4,7 @@ namespace Webup\LaravelSendinBlue;
 
 use Illuminate\Mail\Transport\Transport;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use SendinBlue\Client\Api\TransactionalEmailsApi;
 use SendinBlue\Client\Model\SendSmtpEmail;
 use SendinBlue\Client\Model\SendSmtpEmailAttachment;

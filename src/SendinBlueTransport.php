@@ -160,15 +160,17 @@ class SendinBlueTransport extends Transport
         $attachment = [];
 
         // CID embedded images (inline images)
-        preg_match_all('/<img.+?src="(.+?)"/', $html, $matches);
-        array_shift($matches);
-        $matches = Arr::flatten($matches);
+        $doc = new \DOMDocument();
+        $doc->loadHTML($html);
+        $xml = simplexml_import_dom($doc);
+        $imageTags = $doc->getElementsByTagName('img');
 
-        foreach ($matches as $match) {
-            $data = @file_get_contents($match);
+        foreach ($imageTags as $imageTag) {
+            $imgUrl = $imageTag->getAttribute('src');
+            $data = @file_get_contents($imgUrl);
 
             if ($data) {
-                $fileName = basename($match);
+                $fileName = basename($imgUrl);
 
                 // If the file name extension is missing, add it
                 if (!$this->hasExtension($fileName)) {
@@ -177,8 +179,8 @@ class SendinBlueTransport extends Transport
                     $fileName = Str::finish($fileName, '.'.$extension);
                 }
 
-                $html = str_replace($match, 'cid:'.$fileName, $html);
-                $text = str_replace($match, 'cid:'.$fileName, $text);
+                $html = str_replace($imgUrl, 'cid:'.$fileName, $html);
+                $text = str_replace($imgUrl, 'cid:'.$fileName, $text);
 
                 $attachment[] = [
                     'name' => $fileName,

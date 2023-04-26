@@ -161,7 +161,7 @@ class SendinBlueTransport extends Transport
 
         // CID embedded images (inline images)
         $doc = new \DOMDocument();
-        $doc->loadHTML($html);
+        @$doc->loadHTML($html);
         $xml = simplexml_import_dom($doc);
         $imageTags = $doc->getElementsByTagName('img');
 
